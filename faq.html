@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>安装教程 / 常见问题 · 野火整合包</title>
+<meta name="description" content="野火整合包安装教程：客户端五步安装、服务端开服流程，以及启动崩溃、卡顿等常见问题的解决办法。">
+<meta name="theme-color" content="#12100f">
+<link rel="icon" type="image/png" href="assets/img/icon.png">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/font/fusion-pixel-12px-proportional-zh_hans.ttf.woff2">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="faq" data-title="安装教程 / 常见问题">
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header id="site-header"></header>
+
+<main id="main">
+
+  <!-- 客户端教程 -->
+  <section class="section" id="client">
+    <div class="wrap">
+      <div class="head">
+        <span class="head__kicker">GUIDE · CLIENT</span>
+        <h1 class="head__title">客户端安装教程</h1>
+        <p class="head__desc">
+          第一次玩模组整合包的话，从第一步开始照着做就行，全程大约 15 分钟。
+          中途遇到问题，翻到页面底部的<a href="#faq">常见问题</a>看看。
+        </p>
+      </div>
+
+      <div class="note mb-2">
+        <span class="note__icon">📦</span>
+        <div>还没下载？先去 <a href="downloads.html">下载中心</a> 拿到最新的客户端压缩包，<b>不要提前解压</b>。</div>
+      </div>
+
+      <div id="guide-client"></div>
+    </div>
+  </section>
+
+  <!-- 服务端教程 -->
+  <section class="section section--alt" id="server">
+    <div class="wrap">
+      <div class="head">
+        <span class="head__kicker">GUIDE · SERVER</span>
+        <h2 class="head__title">服务端开服教程</h2>
+        <p class="head__desc">
+          适合想和几个朋友一起玩的情况。开服比装客户端多一点步骤，
+          但按顺序走一遍就好；卡在哪一步可以带着控制台截图来群里问。
+        </p>
+      </div>
+
+      <div class="note note--warn mb-2">
+        <span class="note__icon">🔒</span>
+        <div>
+          <strong>端口暴露到公网前请注意安全</strong>：不要把服务器管理面板、RCON 端口直接开放给所有人，
+          定期备份世界文件夹。公开服建议开启正版验证（<code>online-mode=true</code>）。
+        </div>
+      </div>
+
+      <div id="guide-server"></div>
+    </div>
+  </section>
+
+  <!-- 常见问题 -->
+  <section class="section" id="faq">
+    <div class="wrap">
+      <div class="head">
+        <span class="head__kicker">FAQ</span>
+        <h2 class="head__title">常见问题</h2>
+        <p class="head__desc">点标题展开答案。找不到答案就直接来群里问。</p>
+      </div>
+
+      <div id="faq-list"></div>
+
+      <div class="card mt-3">
+        <h3 class="mb-1">还是没解决？</h3>
+        <p class="dim">
+          来 QQ 群提问时，请顺手带上这几样东西，能帮你省下大量来回问的时间：
+        </p>
+        <ul class="dim">
+          <li>整合包版本号（例如 v0.3.3）</li>
+          <li>操作系统、内存大小、分配了多少内存</li>
+          <li>Java 版本（<code>java -version</code> 的输出）</li>
+          <li>崩溃报告：<code>crash-reports</code> 文件夹里最新那个文件的内容</li>
+          <li>做了什么操作之后出现的，以及完整的报错截图</li>
+        </ul>
+        <div class="btn-row">
+          <a class="btn btn--primary" href="support.html">加入 QQ 群提问</a>
+          <a class="btn btn--ghost" href="downloads.html">回到下载页</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="site-footer"></footer>
+
+<noscript>
+  <div class="wrap" style="padding:20px 0">
+    <div class="note note--warn">
+      <span class="note__icon">⚠️</span>
+      <div><strong>需要开启 JavaScript</strong>：教程与常见问题由脚本渲染，请允许本站运行 JavaScript。</div>
+    </div>
+  </div>
+</noscript>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/render.js"></script>
+</body>
+</html>

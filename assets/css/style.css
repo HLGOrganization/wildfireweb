@@ -1,0 +1,1280 @@
+/* ==========================================================================
+   野火整合包 · 站点样式表
+   --------------------------------------------------------------------------
+   设计语言参考 complementary.dev：
+     · 扁平化，全程无 box-shadow、无发光、无渐变色块
+     · 深灰底（rgb 40,40,42）+ 更深的内嵌块（rgb 30,30,31）做层次
+     · 大字号标题、大留白、正文浅灰
+     · 圆角 10px（卡片）/ 胶囊（按钮、标签）
+     · 单一暖橙强调色，少量淡蓝链接色
+   纯手写 CSS，不加载任何外部字体/CDN，可离线打开。
+   --------------------------------------------------------------------------
+   目录：
+     01. 变量与基础
+     02. 排版
+     03. 通用组件（按钮 / 卡片 / 标签 / 提示 / 表单）
+     04. 顶栏与页脚
+     05. 首页 Hero
+     06. 下载
+     07. 更新日志
+     08. 模组列表
+     09. 教程与 FAQ
+     10. 赞助与加群
+     11. 工具类与响应式
+   ========================================================================== */
+
+/* ---------- 01. 变量与基础 ---------------------------------------------- */
+
+:root {
+  /* 层次：页面 → 内嵌块 → 分隔线
+     面用的是"带透明度的颜色"，这样背景图能隐隐透出来。
+     透明度是特意配过的：叠在 --bg 上算出来的结果和原来的纯色几乎一致，
+     所以在 config.js 里把 background.image 留空时，观感不会变样。 */
+  --bg:        rgb(40, 40, 42);        /* 页面兜底色 */
+  --inset:     rgba(20, 20, 22, .58);  /* 卡片等内嵌面 */
+  --sunken:    rgba(12, 12, 14, .45);  /* 卡片内部的凹槽：代码、输入框、内层表格 */
+  --raised:    rgba(44, 44, 48, .68);  /* 悬浮 / 激活态 */
+  --band:      rgba(18, 18, 20, .30);  /* 交替分节的底色 */
+  --topbar:    rgba(20, 20, 22, .80);  /* 顶栏：要压得住滚过去的内容 */
+  --footer:    rgba(20, 20, 22, .62);
+  --line:      rgba(120, 120, 126, .30);  /* 主分隔线 */
+  --line-soft: rgba(120, 120, 126, .18);  /* 弱分隔线 */
+
+  /* 背景图：默认关闭，由 config.js 经 render.js 覆盖 */
+  --bg-image:    none;
+  --bg-blur:     30px;
+  --bg-lift:     1;
+  --bg-contrast: 1;
+  --bg-dim:      0;
+
+  /* 文字。次要文字原来是 .45，在带背景图时对比度只有 2.9:1，
+     提到 .52 后改善到 3.3:1（纯色背景下也顺带从 4.18 升到 4.9）。 */
+  --text:      rgb(254, 254, 254);
+  --text-dim:  rgba(254, 254, 254, .72);
+  --text-mute: rgba(254, 254, 254, .52);
+
+  /* 强调色（野火橙，与参考站主题色同源） */
+  --accent:      rgb(255, 180, 80);
+  --accent-soft: rgba(255, 180, 80, .12);
+  --accent-line: rgba(255, 180, 80, .38);
+  --link:        rgb(100, 200, 255);
+
+  /* 状态色：只用低饱和的文字色，不做大色块 */
+  --ok:   rgb(126, 211, 140);
+  --warn: rgb(255, 202, 108);
+  --err:  rgb(255, 128, 128);
+  --info: rgb(130, 180, 255);
+
+  --radius:      10px;
+  --radius-pill: 50px;
+  --maxw:        1140px;
+
+  /* 参考站用的 Rubik/Montserrat 在国内访问不稳定，正文改用系统无衬线栈近似。
+     中文字体普遍没有 Light 字重，强行 font-weight:300 会被浏览器伪轻量化、
+     反而发虚，所以正文用 400。 */
+  --font: "Segoe UI", system-ui, -apple-system, "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC",
+          "Noto Sans CJK SC", sans-serif;
+
+  /* 自托管的像素字体（12px 比例模式，简体中文）。这里只登记字族名，
+     真正"用不用、用在哪"由文件末尾 html[data-font] 那一段决定，
+     开关在 config.js 的 font 里。字重只有 400 一档，千万不要加粗。 */
+  --font-pixel: "Fusion Pixel", "Microsoft YaHei", "PingFang SC", sans-serif;
+
+  --font-mono: "Cascadia Mono", "Consolas", "SFMono-Regular", "Courier New", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+  -webkit-text-size-adjust: 100%;
+  /* 底色必须放在 html 上：如果放在 body，body 的背景会画在下面两层
+     伪元素之上，把背景图整个盖住。 */
+  background-color: var(--bg);
+}
+
+/* ---------- 全站背景：模糊图 + 压暗层 ----------
+   两层都固定不随页面滚动，且都不接收鼠标事件。
+   放在 html 上而不是 body 上，是为了避开 body 的 overflow 裁剪。 */
+html::before,
+html::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+}
+html::before {
+  /* 负 inset 把高斯模糊在四边产生的透明衰减推到视口之外，
+     否则屏幕边缘会出现一圈发虚的亮边 */
+  inset: calc(-4 * var(--bg-blur));
+  z-index: -2;
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* 先模糊，再做色调提升。提亮不是可有可无的：
+     这类夜景截图极暗（中位数只有 15/255），不处理的话背景层
+     比页面底色还黑，等于白放一张图。
+     但只提亮会把高光削平（原图 13% 的像素 >51 会直接死白），
+     所以再跟一个 contrast<1 把高光压回来 —— 等效于一条 gamma 曲线：
+     暗部大幅抬起、高光基本不动。 */
+  filter: blur(var(--bg-blur))
+          brightness(var(--bg-lift))
+          contrast(var(--bg-contrast))
+          saturate(1.05);
+}
+html::after {
+  inset: 0;
+  z-index: -1;
+  /* --bg-dim 为 0 时（没配背景图）这层完全透明，不影响原样式 */
+  background-color: rgba(18, 18, 20, var(--bg-dim));
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--text);
+  /* 这里不设 background —— 见上面 html 的说明。
+     也不用 overflow:hidden，它会产生滚动容器并让 sticky 顶栏失效；
+     clip 不会，且同样能兜住意外溢出 */
+  overflow-x: clip;
+}
+
+img { max-width: 100%; display: block; border: 0; }
+
+a { color: var(--link); text-decoration: none; transition: color .18s ease; }
+a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+h1, h2, h3, h4 { margin: 0; font-weight: 400; line-height: 1.25; color: var(--text); }
+p { margin: 0 0 1em; }
+p:last-child { margin-bottom: 0; }
+
+ul, ol { margin: 0 0 1em; padding-left: 1.4em; }
+li { margin-bottom: .4em; }
+
+code, kbd, pre { font-family: var(--font-mono); font-size: .9em; }
+
+code {
+  padding: .1em .45em;
+  color: var(--accent);
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  /* 用 anywhere 而不是 break-all：短代码（如 online-mode=true）不会被拦腰截断，
+     只有放不下的长路径才会换行 */
+  overflow-wrap: anywhere;
+}
+
+kbd {
+  padding: .1em .45em;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: .85em;
+}
+
+hr { border: 0; border-top: 1px solid var(--line-soft); margin: 2.5rem 0; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 999;
+  padding: .7em 1.2em;
+  color: rgb(30, 30, 31);
+  background: var(--accent);
+  border-radius: 0 0 var(--radius) 0;
+}
+.skip-link:focus { left: 0; top: 0; }
+
+::selection { background: var(--accent); color: rgb(30, 30, 31); }
+
+* { scrollbar-color: var(--line) var(--inset); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--inset); }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-line); }
+
+/* ---------- 02. 排版 ---------------------------------------------------- */
+
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section { padding: 84px 0; }
+.section--tight { padding: 52px 0; }
+.section--alt {
+  background: var(--band);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* 分节标题。背景图明显时，文字必须坐在深色面板上才读得清 —— 见 README 的说明。 */
+.head {
+  margin-bottom: 32px;
+  max-width: 76ch;
+  padding: 26px 30px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+
+.head__kicker {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.head__title {
+  font-size: clamp(26px, 3.6vw, 38px);
+  line-height: 1.2;
+}
+
+.head__desc {
+  margin: 14px 0 0;
+  font-size: 16px;
+  color: var(--text-dim);
+}
+
+/* 兜底：任何直接暴露在页面背景上的文字块，自动加一层深色底。
+   背景图最亮处亮度约 94，裸着的次要文字对比度只有 4.08:1（不达标），
+   所以页面里不能存在"没有底"的文字。
+   有了这条，以后往页面里直接写 <p> / <h3> 也不会漏掉；
+   只包着按钮的段落（`p` 里只有一颗 `.btn`）不受影响，否则按钮会被多套一层底色。
+   注：用到 :has() 的那条单独写，老浏览器忽略它也不影响上面那组。 */
+.section > .wrap > h2,
+.section > .wrap > h3,
+.section > .wrap > h4,
+.section > .wrap > ul,
+.section > .wrap > ol {
+  display: inline-block;
+  padding: 12px 20px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+.section > .wrap > ul,
+.section > .wrap > ol { display: block; padding: 20px 24px; }
+.section > .wrap > p:not(:has(> .btn)):not(.mod-count) {
+  padding: 16px 22px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+
+/* ---------- 03. 通用组件 ------------------------------------------------ */
+
+/* 按钮：胶囊形，扁平 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 26px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+  text-decoration: none;
+}
+
+.btn:hover { text-decoration: none; }
+
+.btn--primary {
+  color: rgb(30, 30, 31);
+  background: var(--accent);
+}
+.btn--primary:hover { background: rgb(255, 202, 128); color: rgb(30, 30, 31); }
+
+.btn--ghost {
+  color: var(--text);
+  background: var(--inset);
+  border-color: var(--line);
+}
+.btn--ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn--sm { padding: 8px 18px; font-size: 13.5px; }
+.btn--lg { padding: 15px 34px; font-size: 16px; }
+.btn--block { width: 100%; }
+
+.btn[aria-disabled="true"],
+.btn[disabled] {
+  cursor: not-allowed;
+  color: var(--text-mute);
+  background: var(--inset);
+  border-color: var(--line-soft);
+}
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* 卡片：扁平，靠 1px 边框和更深底色分层 */
+.card {
+  padding: 28px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+
+.card--hover { transition: border-color .18s ease, background-color .18s ease; }
+.card--hover:hover { border-color: var(--line); background: var(--raised); }
+
+/* 标签：胶囊，低饱和 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 11px;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: nowrap;
+  color: var(--text-dim);
+  background: var(--raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+}
+.tag--fire  { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+.tag--ok    { color: var(--ok);   background: rgba(126, 211, 140, .12); border-color: rgba(126, 211, 140, .35); }
+.tag--warn  { color: var(--warn); background: rgba(255, 202, 108, .12); border-color: rgba(255, 202, 108, .35); }
+.tag--info  { color: var(--info); background: rgba(130, 180, 255, .12); border-color: rgba(130, 180, 255, .35); }
+.tag--err   { color: var(--err);  background: rgba(255, 128, 128, .12); border-color: rgba(255, 128, 128, .35); }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* 提示条：左侧一道细线，不用大色块 */
+.note {
+  display: flex;
+  gap: 14px;
+  padding: 18px 22px;
+  font-size: 14.5px;
+  color: var(--text-dim);
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.note strong { color: var(--text); font-weight: 600; }
+.note--warn { border-left-color: var(--err); }
+.note__icon { flex: none; font-size: 16px; line-height: 1.7; }
+
+/* 键值对 */
+.meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+}
+.meta__k {
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: var(--text-mute);
+}
+.meta__v { font-size: 14.5px; color: var(--text); word-break: break-all; }
+
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 14.5px;
+  color: var(--text-mute);
+  background: var(--inset);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+.todo {
+  display: inline-block;
+  padding: 2px 9px;
+  font-size: 12px;
+  color: var(--warn);
+  border: 1px dashed var(--accent-line);
+  border-radius: var(--radius-pill);
+}
+
+/* 长文本/校验值 */
+.urlbox { display: flex; gap: 8px; align-items: stretch; }
+.urlbox input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+.urlbox input:focus { color: var(--text); border-color: var(--line); outline: none; }
+
+.copied { animation: pop .3s ease; }
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* 轻提示 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  z-index: 200;
+  transform: translate(-50%, 16px);
+  padding: 12px 24px;
+  font-size: 14.5px;
+  color: var(--text);
+  background: rgba(18, 18, 20, .95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+/* 表单控件 */
+.select, .input {
+  width: 100%;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  transition: border-color .18s ease;
+}
+.select { cursor: pointer; }
+.select:focus, .input:focus { border-color: var(--line); outline: none; }
+.input::placeholder { color: var(--text-mute); }
+
+.field { margin-bottom: 20px; }
+.field__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--text-mute);
+}
+
+/* 表格 */
+.table-wrap {
+  overflow-x: auto;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+table.tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 620px; }
+table.tbl th, table.tbl td { padding: 13px 18px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+table.tbl th {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  background: var(--sunken);
+  white-space: nowrap;
+}
+table.tbl tbody tr:last-child td { border-bottom: 0; }
+table.tbl tbody tr:hover { background: rgba(255, 255, 255, .025); }
+table.tbl td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- 04. 顶栏与页脚 ---------------------------------------------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--topbar);
+  /* 半透明顶栏必须配毛玻璃，否则滚过去的文字会从底下透上来 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.topbar__inner { display: flex; align-items: center; gap: 24px; height: 72px; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  color: var(--text);
+}
+.brand:hover { text-decoration: none; color: var(--text); }
+/* 图标必须是"原生像素网格的整数倍"才锐利：icon.png 是 68x68、原生 17x17，
+   所以 34(=17x2) / 102(=17x6) / 136(=17x8) 都干净，34.5 或 30 这种就会糊。 */
+.brand__logo { width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated; }
+.brand__text { display: flex; flex-direction: column; line-height: 1.2; }
+.brand__name { font-size: 17px; }
+.brand__en { font-size: 10px; letter-spacing: .28em; color: var(--text-mute); }
+
+.nav { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
+.nav__link {
+  padding: 9px 14px;
+  font-size: 14.5px;
+  color: var(--text-dim);
+  border-radius: 8px;
+  transition: color .18s ease, background-color .18s ease;
+}
+.nav__link:hover { color: var(--text); background: var(--inset); text-decoration: none; }
+.nav__link[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+
+.navtoggle {
+  display: none;
+  margin-left: auto;
+  width: 42px; height: 38px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.navtoggle span {
+  display: block;
+  width: 18px; height: 1.5px;
+  margin: 4px auto;
+  background: var(--text);
+  transition: transform .2s ease, opacity .2s ease;
+}
+.navtoggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+.navtoggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.navtoggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
+
+.site-footer {
+  margin-top: auto;
+  padding: 64px 0 32px;
+  background: var(--footer);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line-soft);
+}
+.footer__grid { display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: 48px; }
+.footer__brandline { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.footer__brandline img { width: 34px; height: 34px; image-rendering: pixelated; }
+.footer__brandline strong { font-weight: 400; font-size: 17px; }
+.footer__title {
+  margin-bottom: 16px;
+  font-size: 12px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.footer__list { list-style: none; margin: 0; padding: 0; }
+.footer__list li { margin-bottom: 10px; font-size: 14.5px; }
+.footer__list a { color: var(--text-dim); }
+.footer__list a:hover { color: var(--accent); text-decoration: none; }
+.footer__bottom {
+  margin-top: 48px;
+  padding-top: 24px;
+  font-size: 13px;
+  color: var(--text-mute);
+  border-top: 1px solid var(--line-soft);
+}
+.footer__bottom p { margin: 0 0 8px; }
+
+/* ---------- 05. 首页 Hero ----------------------------------------------- */
+
+.hero { padding: 76px 0 68px; border-bottom: 1px solid var(--line-soft); }
+
+/* 单列居中，视觉重心与参考站一致：标志 → 标题 → 说明 → 按钮。
+   整块做成面板，这样背景图再亮也不会影响标题的可读性。 */
+.hero__inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 0;
+  text-align: center;
+  padding: 44px 40px 40px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+.hero__art { order: -1; margin-bottom: 28px; }
+.hero__logo { width: 136px; height: 136px; image-rendering: pixelated; }
+
+.hero__en {
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: .44em;
+  color: var(--text-mute);
+}
+.hero__kicker { display: block; margin-bottom: 14px; }
+
+.hero__title {
+  font-size: clamp(34px, 6vw, 60px);
+  line-height: 1.12;
+  letter-spacing: -.01em;
+  margin-bottom: 20px;
+}
+.hero__title em { font-style: normal; color: var(--accent); }
+
+.hero__lead {
+  max-width: 62ch;
+  margin: 0 0 32px;
+  font-size: clamp(15px, 1.6vw, 17px);
+  color: var(--text-dim);
+}
+
+.hero__actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 44px; }
+
+/* 「下载整合包」要正好压在面板中线上。整排虽然是居中的，但左边「安装教程」4 个字、
+   右边「赞助」2 个字，会把中间那颗往右顶 24px，所以给三颗同一个最小宽度把两边配平。
+   宽的那颗（下载整合包）本来就更宽，最小值管不到它。 */
+.hero__actions > .btn { min-width: 168px; }
+
+.hero__facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px 40px;
+  list-style: none;
+  margin: 0;
+  padding: 26px 0 0;
+  border-top: 1px solid var(--line-soft);
+  width: 100%;
+}
+/* 标签 12px、数值 24px，用 center 让两者的"中心"落在同一条横线上。
+   用 baseline 的话标签会贴着数值的基线往下沉，看着比数值低一截。 */
+.hero__fact { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-mute); }
+.hero__fact b { font-weight: 400; font-size: 16px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* 快捷入口 */
+.quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(258px, 100%), 1fr)); gap: 20px; }
+.quick__item { display: flex; flex-direction: column; gap: 10px; color: inherit; }
+.quick__item:hover { text-decoration: none; color: inherit; }
+.quick__icon { font-size: 22px; line-height: 1; }
+.quick__title { font-size: 17px; }
+.quick__desc { margin: 0; font-size: 14.5px; color: var(--text-dim); }
+.quick__go { margin-top: auto; padding-top: 14px; font-size: 14px; color: var(--accent); }
+
+/* ---------- 06. 下载 ---------------------------------------------------- */
+
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.dl-panel { padding: 0; overflow: hidden; }
+
+.dl-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.dl-panel__icon { font-size: 22px; line-height: 1; }
+.dl-panel__title { font-size: 20px; }
+.dl-panel__sub { margin: 4px 0 0; font-size: 13.5px; color: var(--text-mute); }
+
+.dl-panel__body { padding: 24px 28px 28px; }
+
+.dl-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 16px 20px;
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+
+.dl-file {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 14px;
+  margin-bottom: 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  word-break: break-all;
+}
+.dl-file__label { flex: none; color: var(--text-mute); }
+
+.dl-actions { display: grid; gap: 10px; }
+
+.dl-mirrors { margin-top: 20px; }
+.dl-mirrors__title {
+  margin-bottom: 10px;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.dl-mirrors__list { display: grid; gap: 8px; }
+.dl-mirror {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+.dl-mirror__name { flex: 1 1 auto; }
+.dl-mirror__code { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); }
+.dl-mirror .btn { flex: none; }
+
+.dl-hash { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
+.dl-note { margin-top: 16px; font-size: 13.5px; color: var(--text-mute); }
+.dl-note:first-child { margin-top: 0; }
+
+/* 「必须用 Java 21」这类不照做会出事的提醒：在 .dl-note 上补一道左侧红线和淡红底，
+   比普通备注显眼，但仍然是一条细线、不用大色块。 */
+.dl-note--warn {
+  padding: 10px 14px;
+  color: var(--text-dim);
+  background: rgba(255, 128, 128, .07);
+  border: 1px solid rgba(255, 128, 128, .20);
+  border-left: 2px solid var(--err);
+  border-radius: 0 8px 8px 0;
+}
+
+/* ---------- 07. 更新日志 ------------------------------------------------ */
+
+.log { display: grid; gap: 20px; }
+.log__item { padding: 26px 28px; }
+.log__head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.log__ver { font-size: 20px; color: var(--text); font-variant-numeric: tabular-nums; }
+.log__date { font-size: 13.5px; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+
+.log__changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.log__changes li { display: flex; gap: 12px; align-items: baseline; font-size: 14.5px; color: var(--text-dim); }
+.log__changes li::before {
+  flex: none;
+  width: 44px;
+  font-size: 12px;
+  text-align: center;
+  padding: 1px 0;
+  border-radius: var(--radius-pill);
+}
+.log__changes li[data-type="add"]::before    { content: "新增"; color: var(--ok);   background: rgba(126, 211, 140, .12); }
+.log__changes li[data-type="fix"]::before    { content: "修复"; color: var(--info); background: rgba(130, 180, 255, .12); }
+.log__changes li[data-type="change"]::before { content: "调整"; color: var(--warn); background: rgba(255, 202, 108, .12); }
+.log__changes li[data-type="remove"]::before { content: "移除"; color: var(--err);  background: rgba(255, 128, 128, .12); }
+
+/* 这一版的 changes 还是空的（刚发版、内容没整理完）时的占位说明 */
+.log__none {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-mute);
+  background: var(--inset);
+  border-radius: var(--radius);
+}
+
+/* 首页只列前几条时，底下的「还有 N 条」提示（里面的链接走站点默认的 a 样式） */
+.log__more {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--text-mute);
+}
+
+/* ---------- 08. 模组列表 ------------------------------------------------ */
+
+.filterbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 18px; }
+.filterbar .input { flex: 1 1 260px; min-width: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 7px 16px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color .18s ease, background-color .18s ease, border-color .18s ease;
+}
+.chip:hover { color: var(--text); border-color: var(--line); }
+.chip[aria-pressed="true"] {
+  color: rgb(30, 30, 31);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(272px, 100%), 1fr)); gap: 16px; }
+.mod {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 22px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  transition: border-color .18s ease, background-color .18s ease;
+}
+.mod:hover { border-color: var(--line); background: var(--raised); }
+.mod__top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.mod__name { font-size: 15.5px; font-weight: 400; color: var(--text); }
+.mod__orig { font-size: 12.5px; color: var(--text-mute); }
+.mod__desc { flex: 1 1 auto; margin: 0; font-size: 13.5px; color: var(--text-dim); }
+.mod__foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.mod__by { font-size: 12.5px; color: var(--text-mute); }
+.mod__link { font-size: 12.5px; }
+
+.mod-count {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 7px 16px;
+  font-size: 13.5px;
+  color: var(--text-mute);
+  background: var(--inset);
+  border-radius: var(--radius-pill);
+}
+
+/* ---------- 09. 教程与 FAQ ---------------------------------------------- */
+
+.steps { counter-reset: step; display: grid; gap: 16px; }
+.step {
+  position: relative;
+  padding: 26px 28px 26px 76px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+.step::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 26px;
+  top: 26px;
+  width: 30px; height: 30px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--accent);
+  border: 1px solid var(--accent-line);
+  border-radius: 50%;
+}
+.step__title { margin-bottom: 12px; font-size: 17px; }
+.step__body { font-size: 14.5px; color: var(--text-dim); }
+
+.accordion { display: grid; gap: 10px; }
+.acc {
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .18s ease;
+}
+.acc[open] { border-color: var(--line); }
+.acc__q {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  font-size: 15.5px;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+}
+.acc__q::-webkit-details-marker { display: none; }
+.acc__q::after {
+  content: "+";
+  margin-left: auto;
+  flex: none;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--accent);
+}
+.acc[open] .acc__q::after { content: "–"; }
+.acc__q:hover { background: rgba(255, 255, 255, .025); }
+.acc__a {
+  padding: 16px 24px 22px;
+  font-size: 14.5px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ---------- 10. 赞助与加群 ---------------------------------------------- */
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.qr {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.qr img {
+  width: 100%;
+  max-width: 200px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: #fff;
+}
+.qr__slot {
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-mute);
+  background: var(--inset);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.qr__slot b { font-weight: 400; font-size: 13px; color: var(--text-dim); }
+.qr__cap { font-size: 13px; color: var(--text-mute); }
+
+.pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 20px; }
+.pay-methods .card { display: flex; flex-direction: column; }
+.pay-methods h4 { margin-bottom: 16px; font-size: 16px; }
+
+.qq-num {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+.qq-num__label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-mute); }
+.qq-num__val {
+  font-size: 30px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+.qq-num .btn { margin-left: auto; }
+
+/* 群二维码与群号左对齐，排在同一条阅读轴线上，避免单独居中显得空 */
+.qq-qr { display: flex; }
+.qq-qr .qr { width: 200px; }
+
+.sponsors { display: flex; flex-wrap: wrap; gap: 10px; }
+.sponsor {
+  padding: 6px 16px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+}
+.sponsor--top { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+
+/* ---------- 11. 工具类与响应式 ------------------------------------------ */
+
+.muted { color: var(--text-mute); }
+.dim { color: var(--text-dim); }
+.mono { font-family: var(--font-mono); }
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 12px; }
+.mt-2 { margin-top: 24px; }
+.mt-3 { margin-top: 36px; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 12px; }
+.mb-2 { margin-bottom: 24px; }
+.center { text-align: center; }
+.nowrap { white-space: nowrap; }
+.hidden { display: none !important; }
+
+/* 进场：只做很轻的位移，不喧宾夺主 */
+.reveal { opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+.reveal.is-in { opacity: 1; transform: none; }
+
+@media (max-width: 900px) {
+  .hero { padding: 52px 0 48px; }
+  .hero__inner { padding: 32px 24px 28px; }
+  .footer__grid { grid-template-columns: 1fr 1fr; gap: 36px; }
+}
+
+@media (max-width: 760px) {
+  html { scroll-padding-top: 84px; }
+  .section { padding: 60px 0; }
+  .head { margin-bottom: 32px; }
+
+  .navtoggle { display: block; }
+  .nav {
+    position: absolute;
+    left: 0; right: 0; top: 100%;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 16px 16px;
+    background: var(--topbar);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .nav.is-open { display: flex; }
+  .nav__link { padding: 13px 16px; font-size: 16px; border-radius: 8px; }
+
+  .hero__logo { width: 102px; height: 102px; }
+  .hero__facts { gap: 12px 28px; }
+  .step { padding: 22px 24px; }
+  .step::before { position: static; margin-bottom: 14px; }
+
+  .footer__grid { grid-template-columns: 1fr; gap: 32px; }
+  .urlbox { flex-direction: column; }
+  .qq-num .btn { margin-left: 0; width: 100%; }
+  table.tbl th, table.tbl td { padding: 11px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+@media print {
+  .topbar, .site-footer, .hero__art, .toast { display: none !important; }
+  /* 打印要白底黑字，背景图两层必须一起去掉 */
+  html::before, html::after { display: none !important; }
+  html, body { background: #fff !important; color: #000; }
+  .card, .step, .acc, .mod, .note { border-color: #bbb; background: #fff; }
+  /* 未滚动到的内容带着 .reveal（opacity:0），打印时必须复位 */
+  .reveal { opacity: 1 !important; transform: none !important; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 11px; color: #555; }
+}
+
+/* ==========================================================================
+   14. 像素字体（开关在 config.js 的 font 里）
+   --------------------------------------------------------------------------
+   字体：缝合像素字体 Fusion Pixel Font · 12px 比例模式 · 简体中文
+   文件：assets/font/fusion-pixel-12px-proportional-zh_hans.ttf.woff2（约 906 KB）
+   授权：SIL OFL-1.1，全文见 assets/font/LICENSE-FusionPixel-OFL.txt
+   自托管，不请求任何外部服务，国内访问也不会变慢。
+
+   ★ 为什么字号必须是 12 的倍数 ★
+   这是一款"按 12px 网格逐格点出来的"位图衍生轮廓字体：设计稿上每个笔画
+   都占整数个 12px 网格方格。只有当 font-size 取 12 的整数倍
+   （12 / 24 / 36 / 48 / 60）时，一个网格方格才正好等于整数个设备像素，
+   笔画边缘才是硬的。写成 14px / 15px / 17px 这种，字体网格和屏幕像素网格
+   错位，浏览器只能用抗锯齿去凑 —— Windows 上还会叠加 ClearType 次像素
+   抗锯齿、带出红蓝彩边，看上去就是"糊"。
+   实测（统计笔画里"半灰过渡像素"占比，越低越锐利，数值越小越好）：
+       12px → 35.7%      24px → 20.3%      36px → 13.7%
+       15px → 58.0%   ← 非整数倍，明显更糊
+   所以下面除了换字族，还要把每个用到的字号都归到 12 的倍数上。
+
+   另一个坑：这套字体只有 400 一个字重。写 font-weight:700 时浏览器会做
+   "伪粗体"（把笔画整体向两侧抹开），像素字被这么一弄就彻底废了。
+   所以下面全部锁死 400，并显式关掉 font-synthesis。
+   需要拉层级就靠字号和颜色，不要靠粗细。
+   ========================================================================== */
+
+@font-face {
+  font-family: "Fusion Pixel";
+  /* 路径是相对"本样式表"（assets/css/）的，所以是 ../font/ 而不是 assets/font/。
+     注意这和背景图那个坑不是一回事：@font-face 里的 url() 按样式表位置解析
+     是规范行为，而自定义属性里的 url() 会被搬到别处再解析、所以才要转绝对地址。 */
+  src: url("../font/fusion-pixel-12px-proportional-zh_hans.ttf.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  /* 文件 900 多 KB：宁可先显示系统字、再换成像素字，也不要把正文空白好几秒 */
+  font-display: swap;
+}
+
+/* ---------- 14.1 哪些元素用像素字 ----------------------------------------
+   划分原则：标题、按钮、导航、标签、表头这类"界面字"换像素字；
+   成段的正文（段落、列表、说明文字、正文链接）保持系统字体。
+   这样标题有味道，正文又能保住原来的字号和阅读节奏 ——
+   12px 是这套字体唯一"原生"的正文尺寸，全站正文都压到 12px 会明显偏小。
+   想要更彻底复古的整体效果，把 config 里的 scope 改成 "all"。 */
+html[data-font] h1,
+html[data-font] h2,
+html[data-font] h3,
+html[data-font] h4,
+html[data-font] .hero__title,
+html[data-font] .hero__en,
+html[data-font] .hero__fact,
+html[data-font] .hero__fact b,
+html[data-font] .head__kicker,
+html[data-font] .head__title,
+html[data-font] .brand__name,
+html[data-font] .brand__en,
+html[data-font] .nav__link,
+html[data-font] .btn,
+html[data-font] .chip,
+html[data-font] .tag,
+html[data-font] .todo,
+html[data-font] .field__label,
+html[data-font] .meta__k,
+html[data-font] .dl-mirrors__title,
+html[data-font] .quick__title,
+html[data-font] .dl-panel__title,
+html[data-font] .dl-panel__sub,
+html[data-font] .log__ver,
+html[data-font] .log__date,
+html[data-font] .mod__name,
+html[data-font] .step__title,
+html[data-font] .acc__q,
+html[data-font] .qq-num__val,
+html[data-font] .qq-num__label,
+html[data-font] .footer__title,
+html[data-font] .footer__brandline strong,
+html[data-font] table.tbl th {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  /* 只有一档字重：禁止浏览器合成粗体/斜体，否则像素笔画会被抹开 */
+  font-synthesis: none;
+  /* macOS 上退回灰度抗锯齿，比次像素抗锯齿更适合像素字；其它平台忽略这两行 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- 14.2 字号对齐到 12 的倍数 -----------------------------------
+   原来几个大标题用的是 clamp()/vw 连续变化，中间必然经过大量非 12 倍数的值，
+   这里改成"媒体查询硬跳档"，让字号只落在 36 / 48 / 60 这几个干净值上。 */
+
+/* 首屏大标题：36 → 48 → 60 */
+html[data-font] .hero__title { font-size: 36px; }
+@media (min-width: 560px) { html[data-font] .hero__title { font-size: 48px; } }
+@media (min-width: 900px) { html[data-font] .hero__title { font-size: 60px; } }
+
+/* 页面主标题：24 → 36 */
+html[data-font] .head__title { font-size: 24px; }
+@media (min-width: 900px) { html[data-font] .head__title { font-size: 36px; } }
+
+/* 小号界面字：原来是 10 / 11 / 12 / 12.5 / 13 / 13.5 / 14.5 六种，统一收进 12 */
+html[data-font] .brand__en,
+html[data-font] .nav__link,
+html[data-font] .chip,
+html[data-font] .tag,
+html[data-font] .todo,
+html[data-font] .head__kicker,
+html[data-font] .hero__en,
+html[data-font] .field__label,
+html[data-font] .meta__k,
+html[data-font] .dl-mirrors__title,
+html[data-font] .dl-panel__sub,
+html[data-font] .log__date,
+html[data-font] .qq-num__label,
+html[data-font] .footer__title,
+html[data-font] table.tbl th { font-size: 12px; }
+
+/* 按钮：主按钮（.btn / .btn--lg）跟着 60px 的大标题走，用 24px。
+   首屏那三个按钮里只有第一个带 --lg，如果这里只给 --lg 放大会出现
+   "一个按钮字大、旁边两个字小"的错位，所以 .btn 一起放大。 */
+html[data-font] .btn,
+html[data-font] .btn--lg { font-size: 24px; }
+
+/* 小按钮用在下载镜像、表格、模组卡这类密集列表里，必须留在 12px。
+   必须写在 .btn 之后 —— 两条规则特异性相同，靠顺序决定胜负。 */
+html[data-font] .btn--sm { font-size: 12px; }
+
+/* 中号标题字：原来 15.5 / 17 / 20 三档并到 24 */
+html[data-font] .brand__name,
+html[data-font] .quick__title,
+html[data-font] .dl-panel__title,
+html[data-font] .log__ver,
+html[data-font] .mod__name,
+html[data-font] .step__title,
+html[data-font] .acc__q,
+html[data-font] .footer__brandline strong { font-size: 24px; }
+
+/* 群号是这一页最想让人记住的信息，单独放大 */
+html[data-font] .qq-num__val { font-size: 36px; }
+
+/* 首屏底部那行"游戏版本 / 加载器 / 当前版本"：标签留 12px、数值放到 24px，
+   和更新日志里 log__ver(24) + log__date(12) 是同一套大小层次。
+   注意这两条必须留在 14.3 之前 —— scope 为 "all" 时，14.3 里那对
+   同特异性规则写在后面，会把标签和数值一起压回 12px。 */
+html[data-font] .hero__fact { font-size: 12px; }
+html[data-font] .hero__fact b { font-size: 24px; }
+
+/* ---------- 14.3 scope: "all" —— 全站像素字 ------------------------------
+   把 --font 整个指向像素字体，于是从 body 开始的每一处文字都会跟着换；
+   剩下的工作同样是把所有字号收进 12 / 24 / 36 这几个档位。
+   正文落到 12px 是这套字体唯一"原生"的尺寸，所以反而最锐利；
+   代价是正文比系统字体的 16px 小一圈，页面整体更像老游戏界面。
+   界面字用到的那几档（按钮 12、标题 24、大标题 36/48/60）由 14.2 负责，
+   这里只需要补正文。 */
+html[data-font="all"] { --font: var(--font-pixel); }
+html[data-font="all"] body { font-size: 12px; line-height: 1.9; }
+
+/* 正文、说明、列表：全部 12px */
+html[data-font="all"] p,
+html[data-font="all"] li,
+html[data-font="all"] dd,
+html[data-font="all"] .head__desc,
+html[data-font="all"] .hero__lead,
+html[data-font="all"] .hero__fact,
+html[data-font="all"] .hero__fact b,
+html[data-font="all"] .note,
+html[data-font="all"] .note__icon,
+html[data-font="all"] .meta__v,
+html[data-font="all"] .empty,
+html[data-font="all"] .toast,
+html[data-font="all"] .select,
+html[data-font="all"] .input,
+html[data-font="all"] .quick__desc,
+html[data-font="all"] .quick__go,
+html[data-font="all"] .dl-file,
+html[data-font="all"] .dl-mirror,
+html[data-font="all"] .dl-mirror__code,
+html[data-font="all"] .dl-note,
+html[data-font="all"] .urlbox input,
+html[data-font="all"] .log__changes li,
+html[data-font="all"] .mod__orig,
+html[data-font="all"] .mod__desc,
+html[data-font="all"] .mod__by,
+html[data-font="all"] .mod__link,
+html[data-font="all"] .mod-count,
+html[data-font="all"] .step__body,
+html[data-font="all"] .acc__a,
+html[data-font="all"] .qr__slot,
+html[data-font="all"] .qr__slot b,
+html[data-font="all"] .qr__cap,
+html[data-font="all"] .sponsor,
+html[data-font="all"] .footer__list li,
+html[data-font="all"] .footer__bottom,
+html[data-font="all"] table.tbl { font-size: 12px; }
+
+/* 代码/版本串默认 .9em，收进 12px 免得算出 10.8 这种非整数倍 */
+html[data-font="all"] code,
+html[data-font="all"] kbd,
+html[data-font="all"] pre { font-size: 12px; }
+
+/* 纯图标或纯装饰，跟着放大到 24 以免和 12px 的正文脱节。
+   .step::before 是那个圆形序号，本身只有 30px 大，保持 12px 即可。 */
+html[data-font="all"] .quick__icon,
+html[data-font="all"] .dl-panel__icon,
+html[data-font="all"] .acc__q::after { font-size: 24px; }

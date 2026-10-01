@@ -1,0 +1,9 @@
+# 统一用 LF 存进仓库：Windows 编辑器（记事本、部分 VS Code 配置）
+# 会把文件改成 CRLF，不做这个设置的话每次都要重新提交整个文件。
+* text=auto eol=lf
+
+# 二进制文件，别当文本处理
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.woff2 binary

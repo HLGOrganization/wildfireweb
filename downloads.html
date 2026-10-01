@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>下载 · 野火整合包</title>
+<meta name="description" content="野火整合包客户端与服务端下载，含备用网盘与 SHA1 校验值。">
+<meta name="theme-color" content="#12100f">
+<link rel="icon" type="image/png" href="assets/img/icon.png">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/font/fusion-pixel-12px-proportional-zh_hans.ttf.woff2">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="downloads" data-title="下载">
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header id="site-header"></header>
+
+<main id="main">
+
+  <!-- 下载面板 -->
+  <section class="section">
+    <div class="wrap">
+      <div class="head">
+        <span class="head__kicker">DOWNLOADS</span>
+        <h1 class="head__title">下载中心</h1>
+        <p class="head__desc">
+          整合包完全免费，直接下载即可。如果直链速度慢，请使用下方的备用网盘。
+          下载完成后建议核对 SHA1 校验值。
+        </p>
+      </div>
+
+      <div class="note mb-2">
+        <span class="note__icon">⚠️</span>
+        <div>
+          <strong>客户端与服务端版本号必须一致</strong>，否则联机会因为模组不匹配而无法进入。
+          开服前请先看一遍 <a href="faq.html#server">开服教程</a>。
+        </div>
+      </div>
+
+      <div class="dl-grid">
+        <div id="dl-client"></div>
+        <div id="dl-server"></div>
+      </div>
+
+      <div class="note mt-2">
+        <span class="note__icon">🔗</span>
+        <div>
+          所有链接都失效了？来 <a href="support.html">QQ 群</a> 说一声，我们会尽快补档。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 下载后做什么 -->
+  <section class="section section--alt">
+    <div class="wrap">
+      <div class="head">
+        <span class="head__kicker">NEXT</span>
+        <h2 class="head__title">下载完了，然后呢？</h2>
+      </div>
+      <div class="quick">
+        <a class="card card--hover quick__item" href="faq.html#client">
+          <span class="quick__icon" aria-hidden="true">📖</span>
+          <span class="quick__title">照着教程装一遍</span>
+          <span class="quick__desc">装 Java、导入整合包、分配内存，五步走完就能进游戏。</span>
+          <span class="quick__go">看客户端教程 →</span>
+        </a>
+        <a class="card card--hover quick__item" href="faq.html#server">
+          <span class="quick__icon" aria-hidden="true">🖥️</span>
+          <span class="quick__title">开一个自己的服</span>
+          <span class="quick__desc">改 EULA、调 server.properties、放行端口，全流程说明。</span>
+          <span class="quick__go">看开服教程 →</span>
+        </a>
+        <a class="card card--hover quick__item" href="faq.html">
+          <span class="quick__icon" aria-hidden="true">🚑</span>
+          <span class="quick__title">启动不了 / 崩溃了</span>
+          <span class="quick__desc">先看常见问题，九成的问题里面都有答案。</span>
+          <span class="quick__go">查看 FAQ →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="site-footer"></footer>
+
+<noscript>
+  <div class="wrap" style="padding:20px 0">
+    <div class="note note--warn">
+      <span class="note__icon">⚠️</span>
+      <div><strong>需要开启 JavaScript</strong>：下载列表由脚本渲染，请允许本站运行 JavaScript。</div>
+    </div>
+  </div>
+</noscript>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/render.js"></script>
+</body>
+</html>

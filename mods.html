@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模组列表 · 野火整合包</title>
+<meta name="description" content="野火整合包模组清单与作者致谢，可按分类筛选、按名称搜索。">
+<meta name="theme-color" content="#12100f">
+<link rel="icon" type="image/png" href="assets/img/icon.png">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/font/fusion-pixel-12px-proportional-zh_hans.ttf.woff2">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="mods" data-title="模组列表">
+
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header id="site-header"></header>
+
+<main id="main">
+
+  <section class="section">
+    <div class="wrap">
+      <div class="head">
+        <span class="head__kicker">MOD LIST</span>
+        <h1 class="head__title">模组列表与致谢</h1>
+        <p class="head__desc">
+          下面是整合包内包含的模组。所有模组的著作权与署名权归各自原作者所有，
+          整合包只负责把它们整合到一起、调好配置、补上汉化。
+          <b>如果你喜欢其中某个模组，请去它的项目主页支持原作者。</b>
+        </p>
+      </div>
+
+      <div class="note mb-2">
+        <span class="note__icon">🔎</span>
+        <div>
+          「项目主页」默认跳转到 Modrinth 的搜索结果 —— 这样链接永远不会失效。
+          如果你希望指向精确的项目地址，可以在 <code>assets/js/data.js</code> 里给对应模组补上 <code>url</code> 字段。
+        </div>
+      </div>
+
+      <div class="filterbar">
+        <label class="visually-hidden" for="mod-search" style="position:absolute;left:-9999px">搜索模组</label>
+        <input class="input" id="mod-search" type="search" placeholder="搜索模组名、中文名、作者或说明…" autocomplete="off">
+      </div>
+
+      <div id="mod-chips" class="chips mb-2"></div>
+
+      <p class="mod-count" id="mod-count"></p>
+
+      <div id="mod-grid" class="mod-grid"></div>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="wrap">
+      <div class="head">
+        <h2 class="head__title">关于转载与二次分发</h2>
+      </div>
+      <p class="dim">
+        整合包可以自由转载到其他平台，但请保留原始下载地址，不要二次打包、不要拿去售卖。
+        如果你是本整合包内某个模组的作者，并且不希望自己的作品被包含在内，
+        请联系我们，我们会立刻在下一个版本中移除。
+      </p>
+      <div class="btn-row mt-2">
+        <a class="btn btn--primary" href="support.html">联系我们 / 加入 QQ 群</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="site-footer"></footer>
+
+<noscript>
+  <div class="wrap" style="padding:20px 0">
+    <div class="note note--warn">
+      <span class="note__icon">⚠️</span>
+      <div><strong>需要开启 JavaScript</strong>：模组列表与筛选功能由脚本渲染，请允许本站运行 JavaScript。</div>
+    </div>
+  </div>
+</noscript>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/render.js"></script>
+</body>
+</html>
