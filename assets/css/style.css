@@ -956,7 +956,15 @@ table.tbl td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .qr__slot b { font-weight: 400; font-size: 13px; color: var(--text-dim); }
 .qr__cap { font-size: 13px; color: var(--text-mute); }
 
-.pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 20px; }
+/* 收款方式卡片：列宽封顶在 340px 并整体居中。
+   只有一种收款方式（现在就是这种情况）时，卡片不会横向拉满一整行，
+   二维码不会被孤零零地摆在一条 1200px 宽的空行中间；多于一种时也不会更宽。 */
+.pay-methods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 340px));
+  justify-content: center;
+  gap: 20px;
+}
 .pay-methods .card { display: flex; flex-direction: column; }
 .pay-methods h4 { margin-bottom: 16px; font-size: 16px; }
 
@@ -983,6 +991,19 @@ table.tbl td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* 群二维码与群号左对齐，排在同一条阅读轴线上，避免单独居中显得空 */
 .qq-qr { display: flex; }
 .qq-qr .qr { width: 200px; }
+
+/* 桌面端把群号卡和二维码并排放：群号卡占满左边，二维码固定 200px 贴在右边，
+   否则 1200px 宽的行里二维码右边会空出将近 1000px，看着像没排完。
+   窄屏（<820px）仍然上下堆叠，顺序就是群号 → 二维码 → 小提示。 */
+#qq-block { display: grid; gap: 20px; }
+#qq-block > .qq-num { margin-bottom: 0; }
+#qq-block > .empty { grid-column: 1 / -1; }
+@media (min-width: 820px) {
+  #qq-block { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  #qq-block > .qq-num { grid-column: 1; }
+  #qq-block > .qq-qr { grid-column: 2; grid-row: 1; }
+  #qq-block > .dl-note { grid-column: 1 / -1; }
+}
 
 .sponsors { display: flex; flex-wrap: wrap; gap: 10px; }
 .sponsor {

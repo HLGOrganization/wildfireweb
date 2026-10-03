@@ -365,7 +365,7 @@
     var hasQQ = !isBlank(S.qq && S.qq.group);
 
     var items = [
-      { icon: "⬇️", title: "下载中心", desc: "客户端、服务端、备用网盘与 SHA1 校验，都在这一页。", href: "downloads.html", go: "去下载 →" },
+      { icon: "⬇️", title: "下载中心", desc: "客户端和服务端的最新公测版，都在这一页。", href: "downloads.html", go: "去下载 →" },
       { icon: "📖", title: "安装教程", desc: "不会装？从 Java 到导入整合包，一步一步照着做就行。", href: "faq.html", go: "看教程 →" },
       { icon: "🧩", title: "模组列表", desc: "整合包里有啥、都是谁做的，全部列出来并致谢原作者。", href: "mods.html", go: "看清单 →" },
       { icon: "💛", title: hasQQ ? "赞助 & 加群" : "赞助我们", desc: "想一起玩就进群，想支持我们就点这里。", href: "support.html", go: "前往 →" }
@@ -684,20 +684,22 @@
   /* ======================= 赞助与加群 ======================= */
 
   /* 二维码区块：未配置时给访客看中性占位，
-     具体怎么放图片写在 config.js 注释和 README 里，不要把技术说明暴露给访客 */
+     具体怎么放图片写在 config.js 注释和 README 里，不要把技术说明暴露给访客。
+     caption 传空字符串就只显示二维码、不显示下面那行小字（卡片标题已经写明是哪种方式了）。 */
   function qrBlock(qr, caption, altText, emptyHint) {
+    var cap = isBlank(caption) ? "" : '<span class="qr__cap">' + esc(caption) + "</span>";
     if (!isBlank(qr)) {
       return h(
         '<div class="qr">',
           '<img src="' + esc(qr) + '" alt="' + esc(altText || caption) + '" loading="lazy">',
-          '<span class="qr__cap">' + esc(caption) + "</span>",
+          cap,
         "</div>"
       );
     }
     return h(
       '<div class="qr">',
-        '<div class="qr__slot"><b>暂无二维码</b><span>' + esc(caption) + "</span></div>",
-        '<span class="qr__cap">' + esc(emptyHint || "请使用上方号码或链接") + "</span>",
+        '<div class="qr__slot"><b>暂无二维码</b><span>' + esc(caption || emptyHint || "请使用上方号码或链接") + "</span></div>",
+        cap ? '<span class="qr__cap">' + esc(emptyHint || "请使用上方号码或链接") + "</span>" : "",
       "</div>"
     );
   }
@@ -751,7 +753,8 @@
       var methods = dn.methods || [];
       methodHost.className = "pay-methods";
       methodHost.innerHTML = methods.length ? methods.map(function (m) {
-        var body = qrBlock(m.qr, m.name + " 收款码", m.name + " 收款码", "可先通过上方链接支持");
+        /* 卡片标题已经写了「爱发电」，二维码下面不用再重复一行小字 */
+        var body = qrBlock(m.qr, "", m.name + " 收款码", "可先通过上方链接支持");
         var link = !isBlank(m.url)
           ? '<p style="margin:12px 0 0">' + extLink(m.url, "打开" + m.name + "主页 ↗", "btn btn--ghost btn--sm btn--block") + "</p>"
           : "";
