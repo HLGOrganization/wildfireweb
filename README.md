@@ -78,7 +78,7 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 ```js
 {
-  version: "0.3.6",
+  version: "0.3.7",
   mem: "8 GB",                // 最低内存分配，面板上显示成「最低内存」那一格
   url: "https://pan.quark.cn/s/xxxx",   // 主线路。现在放的是夸克网盘分享页
   mirrors: [
@@ -158,7 +158,7 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 > **版本号现在写在三个地方，发版时要一起改，否则页面会自相矛盾：**
 > `config.js` 里 `hero.facts` 的「当前版本」、`data.js` 里的下载条目、`data.js` 里的
-> `changelog` 首条。当前版本是 **0.3.6 公测**，走的是 `0.x` 加 `channel: "beta"`。
+> `changelog` 首条。当前版本是 **0.3.7 公测**，走的是 `0.x` 加 `channel: "beta"`。
 
 在 `data.js` 的 `downloads.client.versions` **数组最前面**加一条，并把旧版本的
 `recommended: true` 改成 `false`（**推荐版本只能有一个**，否则页面会取到第一个）。
@@ -168,16 +168,16 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 ```js
 {
-  version: "0.3.6",
+  version: "0.3.7",
   channel: "beta",           // release 正式版 / beta 测试版（公测阶段用 beta）
   recommended: true,         // 只有最新版写 true
   mc: "1.20.1",
   loader: "Forge 47.4.23",
   java: "Java 21（64 位）",
   mem: "8 GB",               // 最低内存分配，只有客户端填了才会显示
-  file: "野火整合包-客户端-v0.3.6.zip",
+  file: "野火整合包-客户端-v0.3.7.zip",
   size: "1.28 GB",
-  date: "2026-10-02",
+  date: "2026-10-04",
   url: "你的下载直链",
   mirrors: [{ name: "百度网盘", url: "链接", code: "abcd" }],
   sha1: "40位的SHA1",
@@ -193,8 +193,8 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 ```js
 {
-  version: "v0.3.6",              // 带 v 前缀
-  date: "2026-10-02",             // 发布日期，YYYY-MM-DD
+  version: "v0.3.7",              // 带 v 前缀
+  date: "2026-10-04",             // 发布日期，YYYY-MM-DD
   tags: ["公测", "推荐"],          // 小标签，随便写；初始版写 ["公测", "初始版"]
   summary: "一句话说明这一版干了什么。",   // 可留空 ""
   changes: [
