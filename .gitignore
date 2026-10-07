@@ -6,3 +6,12 @@ desktop.ini
 # 本地临时文件
 *.log
 *.tmp
+
+# Python 跑脚本时产生的缓存
+__pycache__/
+*.pyc
+
+# 本地凭据和运行状态，绝对不能进仓库
+tools/afdian.local.json
+tools/afdian-sync.pid
+tools/afdian-sponsors.log*

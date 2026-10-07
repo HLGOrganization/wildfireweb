@@ -7,3 +7,7 @@
 *.jpg  binary
 *.jpeg binary
 *.woff2 binary
+
+# 例外：Windows 批处理必须是 CRLF，换成 LF 后 cmd 会解析出错。
+# 仓库里仍然存 LF，只在检出到 Windows 时转成 CRLF。
+*.bat text eol=crlf

@@ -29,6 +29,12 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 ├─ faq.html                安装教程 / 常见问题
 ├─ support.html            赞助 & 加群
 ├─ 404.html                找不到页面时的提示页
+├─ tools/
+│  ├─ afdian_sponsors.py        抓爱发电的赞助者，自动写进 config.js
+│  ├─ afdian_sponsors_watch.py  后台常驻，每天定时跑上面那个脚本并推送
+│  ├─ start-sponsor-sync.bat    双击它开始自动同步
+│  ├─ stop-sponsor-sync.bat     双击它停止自动同步
+│  └─ afdian.local.json         本地凭据（已被 .gitignore 忽略，不会进仓库）
 └─ assets/
    ├─ css/style.css        样式（一般不用动）
    ├─ js/
@@ -70,7 +76,7 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 | `donate.afdian` | ✅ `https://afdian.com/a/xiankuangxk` |
 | `donate.methods[0]`（爱发电） | ✅ 主页链接 + 收款码 `assets/img/afdian-qr.png` |
 | `donate.methods[1..]`（微信 / 支付宝） | ⬜ 暂时注释掉了；有收款码再解开注释，别留着空框 |
-| `donate.sponsors` | ⬜ 赞助者名单，现在还是「感谢名单待填写」 |
+| `donate.sponsors` | ✅ 由 `tools/afdian_sponsors.py` 自动同步爱发电的赞助者，**不用手写**；见第四节末尾 |
 | `contact.*` | ⬜ B 站 / GitHub / 邮箱，没有就留空（会自动隐藏） |
 | `icp` | ⬜ 备案号，没有就留空 |
 
@@ -231,6 +237,85 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 分别改 `data.js` 里的 `guide.client` / `guide.server`（每项一张编号卡片）和 `faq`（每项一个折叠条）。
 FAQ 的答案里可以直接写 HTML，比如 `<b>加粗</b>`、`<code>代码</code>`。
+
+### 赞助者名单（自动同步）
+
+`config.js` 里的 `donate.sponsors` **不用手写**，`tools/afdian_sponsors.py` 会去爱发电把赞助者
+抓下来写进去。只用 Python 自带的库，不用装任何东西。
+
+#### 平时怎么用：让它自己跑
+
+双击 **`tools/start-sponsor-sync.bat`** 就行。它会在后台常驻（没有窗口），**每天北京时间
+04:00** 自动抓一次，有变化就提交并推送。开机错过了时间也没关系，醒来后会补跑一次。
+
+- **日志**：`tools/afdian-sponsors.log`（超过 512KB 自动留一份旧的）。
+- **停止**：双击 `tools/stop-sponsor-sync.bat`。
+- 重复双击不会起两份，第二份会自己退出。
+- 它只是个后台进程，不是系统服务 —— **关机或退出后就不跑了**。想让它开机自动起来，把
+  `start-sponsor-sync.bat` 的快捷方式放进启动文件夹（Win+R 输入 `shell:startup` 回车）。
+- `config.js` 有未提交的改动时，它会跳过这一轮，免得把你正在手改的东西一起提交进去。
+
+凭据放在 **`tools/afdian.local.json`**：
+
+```json
+{
+  "user_id": "你的 user_id",
+  "token": "你的 token",
+  "hour": 4
+}
+```
+
+`hour` 是每天几点跑（0–23，北京时间），写 3 就是凌晨 3 点。**这个文件已经被 `.gitignore`
+忽略，不会进仓库**；脚本启动时还会用 `git check-ignore` 再确认一遍，万一没被忽略就直接
+拒绝启动，免得 token 被推上去。
+
+#### 想立刻跑一次：手动执行
+
+```bash
+python tools/afdian_sponsors.py                # 抓取并写回 config.js
+python tools/afdian_sponsors.py --dry-run      # 只打印结果，不改文件
+python tools/afdian_sponsors.py --verbose      # 顺便打印抓取明细
+python tools/afdian_sponsors.py --auto-top 3   # 把赞助榜前 3 名标成金色
+```
+
+- **顺序**是按「第一次赞助的时间」从早到晚排的；同一个人重复赞助不会出现两次（按 `user_id` 去重）。
+- **名字原样照抄**爱发电上的昵称，包括 `爱发电用户_53fc9` 这种系统默认名 —— 不筛选、不改写。
+- **想让谁金色高亮**，直接在 `config.js` 里给他加 `top: true`，下次脚本更新会保留这一项。
+  不加 `--auto-top` 的话，脚本不会自己标人。
+- **只动 `donate.sponsors` 这一个数组**，`config.js` 里别的字段和注释都不碰。名单没变化时
+  连文件都不写，所以不会天天攒出一堆空提交。
+
+手动跑和后台跑读的是同一份 `afdian.local.json`，结果一样；也可以用环境变量
+`AFDIAN_USER_ID` / `AFDIAN_TOKEN` 覆盖（环境变量优先）。
+
+三道安全阀，防止接口抽风把名单搞坏：
+
+- 一个人都没抓到、而配置里本来有名单 → 报错退出，**不写文件**。
+- 一次要删掉超过 3 个人（`--max-drop` 可调）→ 报错退出，**不写文件**。赞助者正常只增不减，
+  掉这么多人基本是接口没抓全。确认确实该删，加 `--max-drop 10` 之类的再跑。
+- 推送前先 `git pull --rebase`；推不上去（比如还没配推送凭据）就把改动留在本地，
+  **不会**把仓库卡在 rebase 半路上。
+
+数据来源有两个，脚本自己挑：
+
+| 来源 | 要配置吗 | 能拿到 |
+| --- | --- | --- |
+| 官方开放接口（现在在用） | 要 `tools/afdian.local.json` | **109 人**，带首次赞助时间和累计金额 |
+| 公开页面接口（备用） | 不用 | **105 人**，从注册那个月一路扫到现在 |
+
+官方的比公开的多 4 个人 —— 有的是没公开显示在感谢页上的。所以**配好 `afdian.local.json`
+才是完整名单**；没配的话脚本会安静地退回公开接口（少几个人，但不会报错），本地随便跑跑够用。
+真到了那一步，「一次少超过 3 个人」那道安全阀会拦住它，不会直接把名单删掉。
+
+推送到 GitHub 用的是 Windows 凭据管理器里存的那份凭据，所以**第一次得先在命令行手动
+`git push` 一次**让系统记住密码；之后后台进程就能自己推了。
+
+> **token 千万别写进仓库里的任何文件，也别贴到公开地方。** 只放在
+> `tools/afdian.local.json` 里 —— 它已经被 `.gitignore` 忽略。想临时用环境变量试一次：
+>
+> ```powershell
+> $env:AFDIAN_USER_ID="..."; $env:AFDIAN_TOKEN="..."; python tools/afdian_sponsors.py --dry-run
+> ```
 
 ---
 
