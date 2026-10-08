@@ -164,7 +164,7 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 > **版本号现在写在三个地方，发版时要一起改，否则页面会自相矛盾：**
 > `config.js` 里 `hero.facts` 的「当前版本」、`data.js` 里的下载条目、`data.js` 里的
-> `changelog` 首条。当前版本是 **0.3.7 公测**，走的是 `0.x` 加 `channel: "beta"`。
+> `changelog` 首条。当前版本是 **0.3.8 公测**，走的是 `0.x` 加 `channel: "beta"`。
 
 在 `data.js` 的 `downloads.client.versions` **数组最前面**加一条，并把旧版本的
 `recommended: true` 改成 `false`（**推荐版本只能有一个**，否则页面会取到第一个）。
@@ -199,7 +199,7 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 
 ```js
 {
-  version: "v0.3.7",              // 带 v 前缀
+  version: "v0.3.8",              // 带 v 前缀
   date: "2026-10-04",             // 发布日期，YYYY-MM-DD
   tags: ["公测", "推荐"],          // 小标签，随便写；初始版写 ["公测", "初始版"]
   summary: "一句话说明这一版干了什么。",   // 可留空 ""
