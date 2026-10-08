@@ -34,16 +34,16 @@ window.DATA = {
       sub:   "玩家自己玩，选这个",
       versions: [
         {
-          version: "0.3.7",
+          version: "0.3.8",
           channel: "beta",
           recommended: true,
           mc: "1.20.1",
           loader: "Forge 47.4.23",
           java: "Java 21（64 位）",
           mem: "8 GB",
-          file: "野火整合包-客户端-v0.3.7.zip",
+          file: "野火整合包-客户端-v0.3.8.zip",
           size: "273 MB",
-          date: "2026-10-04",
+          date: "2026-10-08",
           url: "https://pan.quark.cn/s/e5a7704fa00d",
           mirrors: [],
           sha1: "",
@@ -63,7 +63,7 @@ window.DATA = {
           url: "",
           mirrors: [],
           sha1: "",
-          notes: "上一个公测版，仅作留念，新玩家请直接下 0.3.7。"
+          notes: "上一个公测版，仅作留念，新玩家请直接下 0.3.8。"
         }
       ]
     },
@@ -75,15 +75,15 @@ window.DATA = {
       sub:   "和朋友联机 / 开服，选这个",
       versions: [
         {
-          version: "0.3.7",
+          version: "0.3.8",
           channel: "beta",
           recommended: true,
           mc: "1.20.1",
           loader: "Forge 47.4.23",
           java: "Java 21（64 位）",
-          file: "野火整合包-服务端-v0.3.7.zip",
+          file: "野火整合包-服务端-v0.3.8.zip",
           size: "792 MB",
-          date: "2026-10-04",
+          date: "2026-10-08",
           url: "https://pan.quark.cn/s/672e3cfc4e19",
           mirrors: [],
           sha1: "",
@@ -99,7 +99,7 @@ window.DATA = {
      一条 = 一个版本，按时间从新到旧排列，第一条会自动打上「最新」标签。
      字段：
        version  版本号，带 v 前缀，例如 "v0.3.8"
-       date     发布日期，格式 "2026-10-04"
+       date     发布日期，格式 "2026-10-08"
        tags     小标签数组，例如 ["哑铃", "负重", "矿石"]；初始版写 ["公测", "初始版"]
        summary  一句话说明这一版干了什么（可留空 ""）
        changes  改动清单，一条一行，写法见下面 v0.3.8
@@ -420,7 +420,7 @@ window.DATA = {
         title: "导入整合包",
         body: [
           "把下载到的 <code>.zip</code> <b>不要解压</b>，直接拖进启动器窗口，或者用「版本列表 → 安装整合包」选择这个文件。",
-          "等启动器解压并识别完成，版本列表里会出现「野火整合包 v0.3.7」。",
+          "等启动器解压并识别完成，版本列表里会出现「野火整合包 v0.3.8」。",
           "如果启动器提示「未找到 Forge」，先让它自动补全，或手动安装对应的 Forge 47.4.23。"
         ]
       },
