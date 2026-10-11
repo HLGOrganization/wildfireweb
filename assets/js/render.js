@@ -740,10 +740,12 @@
       introHost.innerHTML = dn.intro ? "<p>" + nl2br(dn.intro) + "</p>" : "";
       if (!isBlank(dn.afdian)) {
         introHost.innerHTML += h(
-          '<p style="margin-top:14px">',
+          '<div class="donate-cta">',
             '<a class="btn btn--primary btn--lg" href="' + esc(dn.afdian) +
             '" target="_blank" rel="noopener noreferrer">前往爱发电支持我们</a>',
-          "</p>"
+            /* 「纯爱发电」这句提示跟按钮并排；留空就只出按钮 */
+            isBlank(dn.hint) ? "" : '<p class="donate-cta__hint">' + nl2br(dn.hint) + "</p>",
+          "</div>"
         );
       }
     }

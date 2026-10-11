@@ -918,6 +918,27 @@ table.tbl td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---------- 10. 赞助与加群 ---------------------------------------------- */
 
+/* 赞助主按钮 + 旁边那句小提示。
+   宽屏时提示贴在按钮右侧，窄屏（flex 换行）自动落到按钮下面。
+   左侧一道淡橙线，跟 .note 提示条同一种语言。 */
+.donate-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px 18px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.donate-cta__hint {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  padding-left: 13px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  border-left: 2px solid var(--accent-line);
+}
+
 .support-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
@@ -1284,6 +1305,7 @@ html[data-font="all"] .acc__a,
 html[data-font="all"] .qr__slot,
 html[data-font="all"] .qr__slot b,
 html[data-font="all"] .qr__cap,
+html[data-font="all"] .donate-cta__hint,
 html[data-font="all"] .sponsor,
 html[data-font="all"] .footer__list li,
 html[data-font="all"] .footer__bottom,
