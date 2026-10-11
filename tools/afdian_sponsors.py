@@ -19,6 +19,13 @@
     python tools/afdian_sponsors.py --verbose      # 打印每个月的扫描情况
     python tools/afdian_sponsors.py --auto-top 3   # 顺便把赞助榜前 3 名标成金色
     python tools/afdian_sponsors.py --slug other   # 临时换一个爱发电主页
+    python tools/afdian_sponsors.py --all-plans    # 不筛方案，主页上谁都拉
+    python tools/afdian_sponsors.py --plan <ID>    # 只拉赞助过指定方案的人
+
+默认只拉赞助过「喜欢野火整合包的可以投喂一下」（¥10 月票）的人，外加走
+「自选方案」的人：这个爱发电主页下还挂着 SCM 光标软件的商品，不筛的话名单里
+会混进一百多个买软件的顾客。想换方案，把方案 id 写进 tools/afdian.local.json
+的 plan_id，或用 --plan 传。
 
 想给谁加金色高亮，直接在 config.js 里给他加 top: true —— 脚本下次更新会保留。
 
@@ -46,6 +53,12 @@ UA = (
 TZ = timezone(timedelta(hours=8))  # 爱发电按北京时间分月
 CONFIG_REL = os.path.join("assets", "js", "config.js")
 REQUEST_GAP = 0.25  # 每次请求之间歇一下，别把人家接口打疼了
+
+# 「喜欢野火整合包的可以投喂一下」这个方案的 plan_id（¥10/月的月票）。
+# 同一个爱发电主页下还挂着 SCM 光标软件的商品，不按方案筛的话，名单里会混进
+# 一百多个买软件的顾客。走「自选方案」的人也一并收（那类记录没有 plan_id）。
+# 想换成别的方案用 --plan 覆盖，想完全不筛用 --all-plans。
+DEFAULT_PLAN_ID = "3d264664bed611f18a505254001e7c00"
 
 
 def _make_stdout_safe():
@@ -152,9 +165,45 @@ def _as_int(value):
         return 0
 
 
-def fetch_open_api(user_id, token, verbose=False):
-    """官方开放接口：一次拿全，还带累计金额和首次赞助时间。"""
+def _plan_ids_of(item):
+    """这个人沾过的所有方案 id。
+
+    sponsor_plans 是他赞助过的方案列表，current_plan 是当前挂着的那一个。
+    接口偶尔只给其中一个（见过 current_plan 空、sponsor_plans 有值的情况），
+    所以两边都看。空字符串代表「自选方案」—— 那条记录里 plan_id 就是空的。
+    """
+    ids = set()
+    cur = item.get("current_plan") or {}
+    if cur:
+        ids.add((cur.get("plan_id") or "").strip())
+    for p in item.get("sponsor_plans") or []:
+        if p:
+            ids.add((p.get("plan_id") or "").strip())
+    return ids
+
+
+def _keep_by_plan(item, plan_id):
+    """这个人该不该进名单。两种人算：
+
+      1. 赞助过 plan_id 这个方案，也就是野火月票；
+      2. 走过「自选方案」—— 那类记录 plan_id 是空的，接口看不出钱是给哪个
+         项目的，但野火的支持者多数走的是这条路，所以一并收进来。
+
+    买 SCM 光标软件的人走的是有明确 plan_id 的商品方案，两种都不沾，会被滤掉。
+    """
+    ids = _plan_ids_of(item)
+    if plan_id and plan_id in ids:
+        return True
+    return "" in ids
+
+
+def fetch_open_api(user_id, token, verbose=False, plan_id=None):
+    """官方开放接口：一次拿全，还带累计金额和首次赞助时间。
+
+    plan_id 不为空时只保留赞助过该方案的人。
+    """
     found = {}
+    skipped = 0
     page = 1
     while True:
         res = open_api_post("/api/open/query-sponsor", user_id, token, {"page": page})
@@ -165,6 +214,9 @@ def fetch_open_api(user_id, token, verbose=False):
             user = item.get("user") or {}
             name = (user.get("name") or "").strip()
             if not name:
+                continue
+            if plan_id and not _keep_by_plan(item, plan_id):
+                skipped += 1
                 continue
             uid = user.get("user_id") or name
             found.setdefault(uid, {
@@ -179,6 +231,9 @@ def fetch_open_api(user_id, token, verbose=False):
             break
         page += 1
         time.sleep(REQUEST_GAP)
+
+    if plan_id and verbose:
+        print("  按方案筛选：滤掉 %d 人，留下 %d 人" % (skipped, len(found)), flush=True)
 
     # 接口按「最近赞助」倒序给，这里改成按首次赞助时间从早到晚 ——
     # 顺序稳定（谁再赞助一次不会跳到最前面），语义也和公开接口那套一致。
@@ -357,6 +412,10 @@ def main():
     ap.add_argument("--root", help="仓库根目录，默认按脚本位置推断")
     ap.add_argument("--max-drop", type=int, default=3, metavar="N",
                     help="一次最多允许少几位赞助者，超过就报错不写（默认 3）")
+    ap.add_argument("--plan", metavar="ID",
+                    help="只保留赞助过这个方案的人（默认用野火月票那个方案）")
+    ap.add_argument("--all-plans", action="store_true",
+                    help="不做方案筛选，把主页上所有赞助者都拉进来")
     args = ap.parse_args()
 
     root = args.root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -380,16 +439,34 @@ def main():
     if creator.get("show_sponsor_list") == 0:
         print("  [!] 这个主页似乎关掉了「公开赞助名单」，可能抓不到人。")
 
+    conf = load_local_conf(root)
     token = os.environ.get("AFDIAN_TOKEN", "").strip()
     env_uid = os.environ.get("AFDIAN_USER_ID", "").strip()
     if not token or not env_uid:
         # 没设环境变量就翻本地凭据文件，这样手动跑和后台跑用的是同一个来源
-        conf = load_local_conf(root)
         token = token or str(conf.get("token") or "").strip()
         env_uid = env_uid or str(conf.get("user_id") or "").strip()
         if token:
             print("凭据来源：tools/afdian.local.json")
     env_uid = env_uid or user_id
+
+    # 方案筛选。这是一个「只支持野火的人」名单，主页上买光标软件的人不该混进来。
+    # 优先级：--all-plans > --plan > 本地配置的 plan_id > 内置的野火月票方案。
+    if args.all_plans:
+        plan_id = ""
+    elif args.plan:
+        plan_id = args.plan.strip()
+    else:
+        plan_id = str(conf.get("plan_id") or "").strip() or DEFAULT_PLAN_ID
+    if plan_id:
+        print("只看方案：%s" % plan_id)
+
+    if not token and plan_id:
+        # 没有凭据就只剩公开接口，而公开接口根本不返回方案信息 —— 硬跑会把
+        # 一百多个买软件的顾客全拉进名单。宁可这次不更新。
+        print("[x] 没有可用凭据，只有公开接口，而它分不出方案，这次先不更新。")
+        print("    检查一下 tools/afdian.local.json 里的 token 和 user_id。")
+        return 1
 
     bucket = None
     rank = []
@@ -397,9 +474,14 @@ def main():
     if token:
         print("数据来源：官方开放接口")
         try:
-            bucket = fetch_open_api(env_uid, token, args.verbose)
+            bucket = fetch_open_api(env_uid, token, args.verbose, plan_id)
             used = "官方开放接口"
         except Exception as exc:  # noqa: BLE001 - 官方接口失败就退回公开接口
+            if plan_id:
+                # 退回去就丢掉了方案筛选，名单会突然涨回一百多人，直接不更新
+                print("[x] 官方接口没用上（%s），而公开接口分不出方案。" % exc)
+                print("    这次先不更新，免得把光标软件的买家拉进整合包的名单。")
+                return 1
             print("  [!] 官方接口没用上（%s），改用公开接口。" % exc)
             bucket = None
     if bucket is None:
