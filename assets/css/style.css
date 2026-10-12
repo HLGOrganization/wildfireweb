@@ -294,7 +294,7 @@ hr { border: 0; border-top: 1px solid var(--line-soft); margin: 2.5rem 0; }
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .25s ease;
   text-decoration: none;
 }
 
@@ -312,6 +312,24 @@ hr { border: 0; border-top: 1px solid var(--line-soft); margin: 2.5rem 0; }
   border-color: var(--line);
 }
 .btn--ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 赞助按钮专用：一圈常亮暖橙光晕。
+   这是对文件开头那条「全程无 box-shadow、无发光」设计规范的**故意破例** ——
+   赞助入口是站点唯一的收入来源，值得比别的主按钮多一点存在感。
+   其余主按钮（下载、前往等）保持扁平。想关掉：config.js 里 donate.glow 改 false。
+   分三层是让光晕边缘软一点，只堆一层会显得像描边。 */
+.btn--glow {
+  box-shadow:
+    0 0 0 1px var(--accent-line),
+    0 0 16px rgba(255, 180, 80, .32),
+    0 0 40px rgba(255, 180, 80, .15);
+}
+.btn--glow:hover {
+  box-shadow:
+    0 0 0 1px var(--accent-line),
+    0 0 22px rgba(255, 180, 80, .46),
+    0 0 56px rgba(255, 180, 80, .22);
+}
 
 .btn--sm { padding: 8px 18px; font-size: 13.5px; }
 .btn--lg { padding: 15px 34px; font-size: 16px; }

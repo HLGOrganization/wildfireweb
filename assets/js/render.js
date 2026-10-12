@@ -741,7 +741,8 @@
       if (!isBlank(dn.afdian)) {
         introHost.innerHTML += h(
           '<div class="donate-cta">',
-            '<a class="btn btn--primary btn--lg" href="' + esc(dn.afdian) +
+            '<a class="btn btn--primary btn--lg' +
+            (dn.glow === false ? "" : " btn--glow") + '" href="' + esc(dn.afdian) +
             '" target="_blank" rel="noopener noreferrer">前往爱发电支持我们</a>',
             /* 「纯爱发电」这句提示跟按钮并排；留空就只出按钮 */
             isBlank(dn.hint) ? "" : '<p class="donate-cta__hint">' + nl2br(dn.hint) + "</p>",
