@@ -267,6 +267,8 @@
     var copy = $("#hero-copy");
     if (!copy) return;
     var H = S.hero || {};
+    /* 首页那颗赞助按钮也吃 donate.glow 这个开关（见 config.js） */
+    var glowCls = (S.donate || {}).glow === false ? "" : " btn--glow";
 
     var facts = (H.facts || []).map(function (f) {
       return '<li class="hero__fact"><span>' + esc(f.k) + "</span><b>" + esc(f.v) + "</b></li>";
@@ -282,7 +284,7 @@
       '<div class="hero__actions">',
         '<a class="btn btn--ghost btn--lg" href="faq.html">安装教程</a>',
         '<a class="btn btn--primary btn--lg" href="#pick">下载整合包</a>',
-        '<a class="btn btn--ghost btn--lg" href="support.html">赞助</a>',
+        '<a class="btn btn--ghost btn--lg' + glowCls + '" href="support.html">赞助</a>',
       "</div>",
       facts ? '<ul class="hero__facts">' + facts + "</ul>" : ""
     );
