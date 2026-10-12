@@ -227,11 +227,14 @@ Live Server 会在你**保存文件后自动刷新页面**，所以改完 `confi
 在 `data.js` 的 `mods.list` 里加一条：
 
 ```js
-{ name: "Sodium", orig: "钠", category: "性能优化", author: "CaffeineMC", desc: "一句话说明。" }
+{ name: "Create", orig: "机械动力", category: "科技", author: "simibubi", desc: "用齿轮、传送带和蒸汽搭出会动的机械。" }
 ```
 
 - `category` 必须是 `mods.categories` 里已有的分类，否则筛选不到它。要加新分类就先加到 `categories`。
 - `url` 留空会自动生成 Modrinth 搜索链接（这样链接永远不会失效）；想指向精确项目地址就填 `url`。
+- 现在这 293 条是**从整合包的 `mods` 文件夹整理出来的**：读每个 jar 里的 `META-INF/mods.toml`，
+  取 `displayName` 当 `name`、`authors` 当 `author`；`orig` 取文件名方括号里的中文名；简介逐条
+  翻译或压缩成一句话。**所以整合包更新后会过时** —— 加了新模组记得往 `mods.list` 里补一条。
 
 ### 改教程和 FAQ
 
