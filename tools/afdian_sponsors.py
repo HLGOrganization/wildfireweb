@@ -21,11 +21,20 @@
     python tools/afdian_sponsors.py --slug other   # 临时换一个爱发电主页
     python tools/afdian_sponsors.py --all-plans    # 不筛方案，主页上谁都拉
     python tools/afdian_sponsors.py --plan <ID>    # 只拉赞助过指定方案的人
+    python tools/afdian_sponsors.py --all-dates    # 不按时间筛，多早的都要
+    python tools/afdian_sponsors.py --since 2026-01-01   # 只留这天之后还在赞助的
 
-默认只拉赞助过「喜欢野火整合包的可以投喂一下」（¥10 月票）的人，外加走
-「自选方案」的人：这个爱发电主页下还挂着 SCM 光标软件的商品，不筛的话名单里
-会混进一百多个买软件的顾客。想换方案，把方案 id 写进 tools/afdian.local.json
-的 plan_id，或用 --plan 传。
+两道筛选：
+
+  1. 方案 —— 默认只拉赞助过「喜欢野火整合包的可以投喂一下」（¥10 月票）的人，
+     外加走「自选方案」的人。这个爱发电主页下还挂着 SCM 光标软件的商品，不筛的话
+     名单里会混进一百多个买软件的顾客。
+
+  2. 时间 —— 默认只留「最近一次赞助」不早于 2026-09-01 的人。名单是给人看
+     「最近谁在支持」的，早年打过钱、后来没再来的就不占位置了。
+
+两个默认值都能用 --plan / --since 覆盖，或写进 tools/afdian.local.json 的
+plan_id / since 字段。顺序按最近一次赞助从新到旧。
 
 想给谁加金色高亮，直接在 config.js 里给他加 top: true —— 脚本下次更新会保留。
 
@@ -59,6 +68,11 @@ REQUEST_GAP = 0.25  # 每次请求之间歇一下，别把人家接口打疼了
 # 一百多个买软件的顾客。走「自选方案」的人也一并收（那类记录没有 plan_id）。
 # 想换成别的方案用 --plan 覆盖，想完全不筛用 --all-plans。
 DEFAULT_PLAN_ID = "3d264664bed611f18a505254001e7c00"
+
+# 只留「最近一次赞助」不早于这一天的赞助者（北京时间），默认 2026-09-01 起 ——
+# 名单是给人看「最近谁在支持」的，早年打过钱、后来没再来的就不占位置了。
+# 想让名单回到全部历史，把它改成 ""，或跑的时候加 --all-dates。
+DEFAULT_SINCE = "2026-09-01"
 
 
 def _make_stdout_safe():
@@ -197,13 +211,26 @@ def _keep_by_plan(item, plan_id):
     return "" in ids
 
 
-def fetch_open_api(user_id, token, verbose=False, plan_id=None):
-    """官方开放接口：一次拿全，还带累计金额和首次赞助时间。
+def _parse_day(text):
+    """把 "2026-09-01" 解析成北京时间当天 00:00 的时间戳。"""
+    try:
+        d = datetime.strptime(str(text).strip(), "%Y-%m-%d")
+    except ValueError:
+        raise SystemExit("日期格式要是 YYYY-MM-DD，收到的是 %r" % (text,))
+    return int(d.replace(tzinfo=TZ).timestamp())
 
-    plan_id 不为空时只保留赞助过该方案的人。
+
+def fetch_open_api(user_id, token, verbose=False, plan_id=None, since_ts=None):
+    """官方开放接口：一次拿全，还带累计金额和首次/最近赞助时间。
+
+    plan_id  不为空时，只保留赞助过该方案的人。
+    since_ts 不为空时，只保留「最近一次赞助」不早于它的人。
+
+    顺序按最近一次赞助从新到旧 —— 最新在支持的人排最前面。
     """
     found = {}
-    skipped = 0
+    skipped_plan = 0
+    skipped_old = 0
     page = 1
     while True:
         res = open_api_post("/api/open/query-sponsor", user_id, token, {"page": page})
@@ -216,13 +243,19 @@ def fetch_open_api(user_id, token, verbose=False, plan_id=None):
             if not name:
                 continue
             if plan_id and not _keep_by_plan(item, plan_id):
-                skipped += 1
+                skipped_plan += 1
+                continue
+            last = _as_int(item.get("last_pay_time"))
+            # last 是 0 说明接口没给时间，这种不筛掉 —— 宁可多留一个，别误删
+            if since_ts and last and last < since_ts:
+                skipped_old += 1
                 continue
             uid = user.get("user_id") or name
             found.setdefault(uid, {
                 "name": name,
                 "amount": item.get("all_sum_amount"),
                 "first": _as_int(item.get("first_pay_time")),
+                "last": last,
             })
         total_page = int(data.get("total_page") or 1)
         if verbose:
@@ -232,13 +265,21 @@ def fetch_open_api(user_id, token, verbose=False, plan_id=None):
         page += 1
         time.sleep(REQUEST_GAP)
 
-    if plan_id and verbose:
-        print("  按方案筛选：滤掉 %d 人，留下 %d 人" % (skipped, len(found)), flush=True)
+    if verbose and (plan_id or since_ts):
+        bits = []
+        if plan_id:
+            bits.append("方案滤掉 %d 人" % skipped_plan)
+        if since_ts:
+            bits.append("时间滤掉 %d 人" % skipped_old)
+        print("  筛选：%s，留下 %d 人" % ("，".join(bits), len(found)), flush=True)
 
-    # 接口按「最近赞助」倒序给，这里改成按首次赞助时间从早到晚 ——
-    # 顺序稳定（谁再赞助一次不会跳到最前面），语义也和公开接口那套一致。
+    # 最近一次赞助从新到旧。时间一样时再看首次时间、最后看名字，
+    # 保证顺序完全确定，不会因为排序抖动产生假 diff。
     bucket = OrderedDict()
-    for uid, info in sorted(found.items(), key=lambda kv: (kv[1]["first"], kv[1]["name"])):
+    for uid, info in sorted(
+        found.items(),
+        key=lambda kv: (-kv[1]["last"], kv[1]["first"], kv[1]["name"]),
+    ):
         bucket[uid] = info
     return bucket
 
@@ -416,6 +457,10 @@ def main():
                     help="只保留赞助过这个方案的人（默认用野火月票那个方案）")
     ap.add_argument("--all-plans", action="store_true",
                     help="不做方案筛选，把主页上所有赞助者都拉进来")
+    ap.add_argument("--since", metavar="YYYY-MM-DD",
+                    help="只保留最近一次赞助不早于这天的人（默认 2026-09-01）")
+    ap.add_argument("--all-dates", action="store_true",
+                    help="不按时间筛，多早的赞助者都留")
     args = ap.parse_args()
 
     root = args.root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -458,13 +503,25 @@ def main():
         plan_id = args.plan.strip()
     else:
         plan_id = str(conf.get("plan_id") or "").strip() or DEFAULT_PLAN_ID
+
+    # 时间筛选：只留「最近一次赞助」不早于这天的人。
+    # 优先级：--all-dates > --since > 本地配置的 since > 内置的 2026-09-01。
+    if args.all_dates:
+        since_text = ""
+    else:
+        since_text = (args.since or str(conf.get("since") or "").strip()
+                      or DEFAULT_SINCE).strip()
+    since_ts = _parse_day(since_text) if since_text else None
+
     if plan_id:
         print("只看方案：%s" % plan_id)
+    if since_text:
+        print("只看 %s 之后（含）还在赞助的人" % since_text)
 
-    if not token and plan_id:
-        # 没有凭据就只剩公开接口，而公开接口根本不返回方案信息 —— 硬跑会把
-        # 一百多个买软件的顾客全拉进名单。宁可这次不更新。
-        print("[x] 没有可用凭据，只有公开接口，而它分不出方案，这次先不更新。")
+    if not token and (plan_id or since_ts):
+        # 没有凭据就只剩公开接口，而公开接口既不返回方案、也不返回时间 ——
+        # 硬跑会把一百多个买软件的顾客、还有早年打过钱就没再来的人全拉进名单。
+        print("[x] 没有可用凭据，只有公开接口，而它分不出方案也拿不到时间，这次先不更新。")
         print("    检查一下 tools/afdian.local.json 里的 token 和 user_id。")
         return 1
 
@@ -474,13 +531,13 @@ def main():
     if token:
         print("数据来源：官方开放接口")
         try:
-            bucket = fetch_open_api(env_uid, token, args.verbose, plan_id)
+            bucket = fetch_open_api(env_uid, token, args.verbose, plan_id, since_ts)
             used = "官方开放接口"
         except Exception as exc:  # noqa: BLE001 - 官方接口失败就退回公开接口
-            if plan_id:
-                # 退回去就丢掉了方案筛选，名单会突然涨回一百多人，直接不更新
-                print("[x] 官方接口没用上（%s），而公开接口分不出方案。" % exc)
-                print("    这次先不更新，免得把光标软件的买家拉进整合包的名单。")
+            if plan_id or since_ts:
+                # 退回去两道筛选就全丢了，名单会突然涨回去，直接不更新
+                print("[x] 官方接口没用上（%s），而公开接口分不出方案也算不出时间。" % exc)
+                print("    这次先不更新，免得混进光标软件的买家和早就没再赞助的人。")
                 return 1
             print("  [!] 官方接口没用上（%s），改用公开接口。" % exc)
             bucket = None
