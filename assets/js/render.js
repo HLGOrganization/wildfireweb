@@ -773,7 +773,14 @@
 
     var sponsorHost = $("#sponsors");
     if (sponsorHost) {
-      var sponsors = (dn.sponsors || []).filter(function (s) { return s && s.name; });
+      /* 自动同步来的 + 手动加的。手动那几个排在最后；重名的只显示一次。 */
+      var seenName = {};
+      var sponsors = (dn.sponsors || []).concat(dn.manualSponsors || [])
+        .filter(function (s) {
+          if (!s || !s.name || seenName[s.name]) return false;
+          seenName[s.name] = 1;
+          return true;
+        });
       if (!sponsors.length) {
         sponsorHost.innerHTML = '<div class="empty">赞助者名单待填写</div>';
       } else {

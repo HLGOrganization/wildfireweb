@@ -302,8 +302,11 @@ python tools/afdian_sponsors.py --plan <ID>    # 只拉赞助过指定方案的�
   不改写名字。
 - **想让谁金色高亮**，直接在 `config.js` 里给他加 `top: true`，下次脚本更新会保留这一项。
   不加 `--auto-top` 的话，脚本不会自己标人。
-- **只动 `donate.sponsors` 这一个数组**，`config.js` 里别的字段和注释都不碰。名单没变化时
-  连文件都不写，所以不会天天攒出一堆空提交。
+- **只动 `donate.sponsors` 这一个数组**，`config.js` 里别的字段和注释都不碰（包括下面的
+  `manualSponsors`）。名单没变化时连文件都不写，所以不会天天攒出一堆空提交。
+- **手动加的赞助者**写在 `donate.manualSponsors` 里 —— 走微信 / 支付宝直接转账这类爱发电
+  抓不到的渠道。脚本永远不碰这个数组，页面上它和 `donate.sponsors` **合并显示**，手动那几位
+  排在最后，重名只显示一次。同样支持 `top: true` 高亮。
 
 手动跑和后台跑读的是同一份 `afdian.local.json`，结果一样；也可以用环境变量
 `AFDIAN_USER_ID` / `AFDIAN_TOKEN` 覆盖（环境变量优先）。
